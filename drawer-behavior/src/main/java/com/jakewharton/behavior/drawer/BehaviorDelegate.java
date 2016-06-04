@@ -24,6 +24,7 @@ import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
@@ -68,7 +69,7 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
     }
   };
 
-  BehaviorDelegate(CoordinatorLayout parent, View child, int gravity) {
+  BehaviorDelegate(CoordinatorLayout parent, final View child, int gravity) {
     this.parent = parent;
     this.child = child;
 
@@ -86,6 +87,21 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
     scrimDrawer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
         ? new ContentScrimDrawer.JellyBeanMr2(parent)
         : new ContentScrimDrawer.Base(parent, child);
+
+    if(isDrawerView(child)) {
+      child.setFocusableInTouchMode(true);
+      child.setOnKeyListener(new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
+          // Must also check if the drawer is in locked mode
+          if (keyCode == KeyEvent.KEYCODE_BACK) {
+            closeDrawers(isPeeking);
+            return true;
+          }
+          return false;
+        }
+      });
+    }
   }
 
   private boolean isContentView(View child) {
@@ -392,6 +408,7 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
   @Override public int clampViewPositionVertical(View child, int top, int dy) {
     return child.getTop();
   }
+
 
   boolean onLayoutChild() {
     int width = parent.getMeasuredWidth();
