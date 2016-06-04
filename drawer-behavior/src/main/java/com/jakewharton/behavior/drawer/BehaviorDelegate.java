@@ -56,6 +56,8 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
 
   private int scrimColor = DEFAULT_SCRIM_COLOR;
 
+  private boolean isBackPressEnabled;
+
   private final Runnable peekRunnable = new Runnable() {
     @Override public void run() {
       peekDrawer();
@@ -88,20 +90,7 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
         ? new ContentScrimDrawer.JellyBeanMr2(parent)
         : new ContentScrimDrawer.Base(parent, child);
 
-    if(isDrawerView(child)) {
-      child.setFocusableInTouchMode(true);
-      child.setOnKeyListener(new View.OnKeyListener() {
-        @Override
-        public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
-          // Must also check if the drawer is in locked mode
-          if (keyCode == KeyEvent.KEYCODE_BACK) {
-            closeDrawers(isPeeking);
-            return true;
-          }
-          return false;
-        }
-      });
-    }
+    setBackPress(true);
   }
 
   private boolean isContentView(View child) {
@@ -273,6 +262,26 @@ final class BehaviorDelegate extends ViewDragHelper.Callback {
 
   @Override public void onViewDragStateChanged(int state) {
     updateDrawerState(state, dragger.getCapturedView());
+  }
+
+  public void setBackPress(boolean enabled) {
+    if(isContentView(child))
+      return;
+
+
+    this.isBackPressEnabled = enabled;
+    child.setFocusableInTouchMode(isBackPressEnabled);
+    child.setOnKeyListener(new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
+          // Must also check if the drawer is in locked mode
+          if (keyCode == KeyEvent.KEYCODE_BACK && isBackPressEnabled) {
+            closeDrawers(isPeeking);
+            return true;
+          }
+          return false;
+        }
+    });
   }
 
   private void updateDrawerState(int activeState, View activeDrawer) {
